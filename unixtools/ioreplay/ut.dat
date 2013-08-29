@@ -1,0 +1,134 @@
+open,3,/lib/libcmd.so.1 O_RDONLY
+close,3
+open,3,/lib/libsec.so.1 O_RDONLY
+close,3
+open,3,/lib/libc.so.1 O_RDONLY
+close,3
+open,3,/platform/SUNW,Sun-Fire-V440/lib/libc_psr.so.1 O_RDONLY
+close,3
+open,3,bin.tar O_RDWR|O_CREAT|O_TRUNC
+open,4,. O_RDONLY
+open,5,/var/run/name_service_door O_RDONLY
+open,7,. O_RDONLY
+open,8,hex O_RDONLY
+read,8,9216
+read,8,2560
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,checkpatchaix O_RDONLY
+read,8,2048
+read,8,1024
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,code-review O_RDONLY
+read,8,512
+write,3,10240
+read,8,10240
+read,8,9728
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,ctfind O_RDONLY
+read,8,9216
+read,8,8704
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,lgrep O_RDONLY
+read,8,8192
+read,8,7680
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,nlab O_RDONLY
+read,8,7168
+read,8,5632
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,sess O_RDONLY
+read,8,5120
+read,8,4096
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,sunpatch.pl O_RDONLY
+read,8,3584
+read,8,3072
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,xt O_RDONLY
+read,8,2560
+read,8,1536
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,t O_RDONLY
+read,8,1024
+read,8,512
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,xt2 O_RDONLY
+write,3,10240
+read,8,10240
+read,8,9728
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,gman O_RDONLY
+read,8,9216
+read,8,8192
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,gman2 O_RDONLY
+read,8,7680
+read,8,6656
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,FindWin O_RDONLY
+read,8,6144
+write,3,10240
+read,8,10240
+write,3,10240
+read,8,10240
+write,3,10240
+read,8,10240
+write,3,10240
+read,8,10240
+write,3,10240
+read,8,10240
+write,3,10240
+read,8,10240
+read,8,6144
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,colors O_RDONLY
+read,8,5632
+write,3,10240
+read,8,10240
+read,8,4096
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,which O_RDONLY
+read,8,3584
+read,8,3072
+close,8
+close,7
+open,7,. O_RDONLY
+open,8,whereis O_RDONLY
+read,8,2560
+close,8
+close,7
+close,6
+close,4
+write,3,8704
+close,3
+close,1
