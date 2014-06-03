@@ -1,0 +1,4 @@
+hardstatus alwayslastline
+hardstatus string "%{= kK} [ %Y-%m-%d %c ] [%-Lw%{+w}%50>%n%f* %t%{-w}%+Lw]%<"
+defscrollback 1000
+startup_message off 
