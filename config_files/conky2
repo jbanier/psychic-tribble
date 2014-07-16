@@ -1,0 +1,21 @@
+background        no
+out_to_console 	  yes
+out_to_x	  no
+update_interval	  2
+total_run_times	  0
+short_units	  yes
+pad_percents	  3
+
+override_utf8_locale yes
+
+TEXT
+[{ "full_text" : "${scroll 50 ${mpd_status}:'${mpd_title}'}"},
+  { "full_text" : "${execi 2700 aptitude search "~U" | wc -l | tail} updates"},
+  {"full_text": " ❤ $acpitemp°C [$cpu% $cpubar]","color": "\#DC322F"},
+  {"full_text": " ≣ [$membar] ", "color":"\#B58900"},
+  ${if_up wlan0}{"full_text": " ≈ ${wireless_essid wlan0} [${wireless_link_bar wlan0}] ","color":"\#33CC99"},${endif}
+  ${if_up eth0}{"full_text": " ≈ eth0 ","color":"\#33CC99"},${endif}
+  {"full_text" : "${if_match "${acpiacadapter}" == "on-line"}+${else}-${endif}${battery_percent}%" , "color":"\#9933CC"},
+  {"full_text": " ♪ ${exec amixer sget Master| tail -1 | awk '{ print $6 }' | tr -d '[]%'} ${exec amixer sget Master| tail -1 | awk '{ print $4 }' | amixer sget Master| tail -1 | awk '{ print $4 }' | tr -d '[]%'}%", "color":"\#268BD2"},
+  {"full_text": " ${time %a %d %b} ${time %H:%M} "}
+],
