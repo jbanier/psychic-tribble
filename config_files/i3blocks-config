@@ -1,0 +1,96 @@
+full_text=〉
+align=center
+color=#666666
+separator=false
+separator_block_width=3
+
+[btc]
+command=echo "BTC: $(curl -s 'https://blockchain.info/ticker'|jq '.["EUR"]["15m"]' || echo '…') €"
+interval=600
+
+[separator]
+
+[External IP]
+label=Ext-IP:
+command=curl ifconfig.me/host
+color=#00FF00
+interval=600
+
+[separator]
+
+[focused]
+command=xdotool getactivewindow getwindowname
+interval=3
+color=#A6D1FA
+
+[separator]
+
+[volume]
+label=Volume:
+command=/usr/share/i3blocks/volume
+color=#6D6DFF
+interval=10
+
+[separator]
+
+[memory]
+label=ram:
+command=/usr/share/i3blocks/memory
+color=#FFFFFF
+separator_block_width=13
+interval=30
+
+[separator]
+
+[disk-home]
+label=home
+command=/usr/share/i3blocks/disk $HOME
+color=#FFFFFF
+interval=30
+
+[separator]
+
+[download]
+command=~/bin/bandwidth.sh rx
+min_width=0000 kB/s
+align=right
+color=#00FF00
+interval=1 # IMPORTANT
+
+[separator]
+
+[upload]
+command=~/bin/bandwidth.sh tx
+min_width=0000 kB/s
+align=right
+color=#FF0000
+interval=1 # IMPORTANT
+
+[separator]
+
+[cpu]
+label=cpu:
+command=/usr/share/i3blocks/cpu_usage
+color=#FFFFFF
+interval=10
+
+[separator]
+
+[temp]
+label=t°
+command=sensors coretemp-isa-0000 | awk '/Physical/ { print $4 }'
+interval=10
+
+[separator]
+
+[BATTERY]
+label=power:
+command=acpi -b | awk '{ split($5,a,":"); print substr($3,0,2), $4, "["a[1]":"a[2]"]" }' | tr -d ','
+interval=30
+
+[separator]
+
+[time]
+command=date '+%d-%m-%Y %H:%M:%S'
+color=#6EFF6E
+interval=5
