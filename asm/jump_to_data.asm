@@ -1,7 +1,7 @@
 ; -----------------------------------------------------------------------------
 ; A 64-bit app
 ;
-;  nasm  -felf64 string.asm
+;  nasm  -felf64 <file>
 ; 
 ; -----------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ main:
 
         call    puts
         ; restore save
-        mov     r8, hello
+        mov     r8, message
 boucle:        
         cmp     byte [r8], 0                  ; check for end of string
         jz      endloop
@@ -33,7 +33,9 @@ endloop:
         mov     edi, hello
         call    puts
 
-        mov     r8, alternate_code
+        ;mov     r8, alternate_code
+        ;call    rls8
+        mov     r8, stupid
         call    r8
 
         ; restore saved registers

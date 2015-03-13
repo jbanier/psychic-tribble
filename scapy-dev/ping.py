@@ -16,8 +16,8 @@ from scapy.all import *
 
 seq = 666
 
-def connect_syn():
-    return IP(dst='173.255.253.196')/TCP(dport=80, flags="S", seq)
+def ping():
+    return IP(dst='173.255.253.196')
 
 def connect_ack(p):
     ack = p[TCP][0][1][TCP].seq + 1

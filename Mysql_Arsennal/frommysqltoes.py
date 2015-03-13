@@ -35,7 +35,7 @@ def getMYSQLRecordsinJson( table_name ):
 					doc[field_names[field_num]] = field
 				field_num += 1
 
-			res = es.index(index="test-index", doc_type='twPeet', body=doc)
+			res = es.index(index="test-index", doc_type='ofpc', body=doc)
 			print(res['created'])
 
 if __name__ == "__main__":
