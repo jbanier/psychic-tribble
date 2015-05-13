@@ -22,23 +22,14 @@ class MessageDumper():
         self.io = StringIO()
 
     def save_message(self, message):
+    	h = {}
     	timestamp = time.time()
-        jsonitems = []
-        s = ""
-
-        jsonitems.append("\"probeName\": \"%s\"" % (probeName))
-        for n, vs in message.headers.items():
-            for v in vs:
-            	try:
-            		jsonitems.append("\"%s\": %d" % (n, int(v)))
-            	except:
-                    jsonitems.append("\"%s\": \"%s\"" % (n, v))
-        jsonitems.append(datetime.datetime.fromtimestamp( timestamp ).strftime('\"timestamp\": \"%Y-%m-%d %H:%M:%S\"'))
-        jsonbody = "{" + (',').join(jsonitems) + "},"
-        """add escape of \" \\ \{ 
-        add better parsing of composite fields like via, ...
-        """
-        print jsonbody
+    	h["headers"] = message.headers.items()
+    	h["body"] = message.toString() 
+    	h["probeName"] = probeName
+    	h["ts"] = timestamp
+        print json.dumps(h, 
+        	sort_keys=True, indent=2, separators=(',', ': '))
 
 class SipProxy(sip.Proxy):
     def __init__(self): 
