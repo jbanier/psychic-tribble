@@ -3,7 +3,7 @@
 # Author: Jérémie Banier (jbanier@gmail.com)
 # Date: Oct. 1 2013
 # Purpose: implement wget using scapy :-)
-# Based on test add-ons sample 
+# Based on test add-ons sample
 # usage:
 # sudo python wget.py
 # a, u = wget()
@@ -26,23 +26,23 @@ def connect_ack(p):
 
 def data_ack(p):
     ack = p[TCP][0][1][TCP].seq + 1
-    seq = seq + 1 
+    seq = seq + 1
     return IP(dst='blog.zonbi.org')/TCP(dport=80, flags="A", ack=ack, seq=seq)
 
 def disconnect_fin(p):
     ack = p[TCP][0][1][TCP].seq + 1
-    seq = seq + 1 
+    seq = seq + 1
     return IP(dst='blog.zonbi.org')/TCP(dport=80, flags="F", ack=ack, seq=seq)
 
 def disconnect_ack(p):
     ack = p[TCP][0][1][TCP].seq + 1
-    seq = seq + 1 
+    seq = seq + 1
     return IP(dst='blog.zonbi.org')/TCP(dport=80, flags="A", ack=ack, seq=seq)
 
 def wget():
     a, u = sr(connect_syn())
     da, du = sr(connect_ack(a))
-    a, u = sr(data_ack(da)$
+    a, u = sr(data_ack(da))
     a, u = sr(disconnect_fin(a))
     a, u = sr(disconnect_ack(a))
     return (da, du)

@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-
+#include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -20,9 +20,10 @@ int	ga_fileDescriptors[1024];
 char*	gb_BigBuffer;
 unsigned int gi_bigBufferSize = 0;
 
-void replay_error(const char* a_message, int errno, void* operation){
+void replay_error(const char* a_message, int syserror, void* operation){
 	closeOperation *t = (closeOperation*) operation;
-	printf("[ERROR] line:%d \"%s\" -- (%s)\n", (*t).lineNumber, a_message, strerror(errno));
+	//printf("[ERROR] line:%d \"%s\" -- (%s)\n", (*t).lineNumber, a_message, strerror(syserror));
+	printf("[ERROR] line:%d \"%s\" -- (%d)\n", (*t).lineNumber, a_message, syserror);
 }
 
 
@@ -36,12 +37,12 @@ void replaySyscall(void* a_operation) {
 
 		if (fd == -1) {
 			replay_error("open failed", errno, t);
-		}	
+		}
 		else {
 			ga_fileDescriptors[ (*op).targetFD ] = fd;
 		}
 		return;
-	} 
+	}
 
 	if (ga_fileDescriptors[ (*t).targetFD ] == 0) {
 		replay_error("Bad file descriptor,open failed ?", errno, t);
@@ -64,7 +65,7 @@ void replaySyscall(void* a_operation) {
 			free(gb_BigBuffer);
 			gi_bigBufferSize = (*op).bufferSize;
 			gb_BigBuffer = (char*) malloc( gi_bigBufferSize );
-			memset(gb_BigBuffer, 'R', gi_bigBufferSize); 
+			memset(gb_BigBuffer, 'R', gi_bigBufferSize);
 		}
 
 		if (! read( ga_fileDescriptors[ (*op).targetFD ], gb_BigBuffer, (*op).bufferSize)){
@@ -79,7 +80,7 @@ void replaySyscall(void* a_operation) {
 			free(gb_BigBuffer);
 			gi_bigBufferSize = (*op).bufferSize;
 			gb_BigBuffer = (char*) malloc( gi_bigBufferSize );
-			memset(gb_BigBuffer, 'W', gi_bigBufferSize); 
+			memset(gb_BigBuffer, 'W', gi_bigBufferSize);
 		}
 
 		if (! write( ga_fileDescriptors[ (*op).targetFD ], gb_BigBuffer, (*op).bufferSize)){

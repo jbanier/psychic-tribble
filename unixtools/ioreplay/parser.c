@@ -29,7 +29,7 @@ int startParsing(const char* a_fileName){
 			a_fileName,
 			errno);
 		return -1;
-	}	
+	}
 }
 
 listItem* buildOperationList(){
@@ -56,7 +56,7 @@ listItem* buildOperationList(){
 		s_operation = tok[0];
 		i_fileDescriptor = atoi( tok[1] );
 		s_argument = tok[2];
-		
+
 		currentOperation = buildOperation(s_operation,
 					i_fileDescriptor,
 					s_argument,
@@ -74,9 +74,9 @@ listItem* buildOperationList(){
 			currListOperation = t;
 		}
 		else {
-			printf("[WARNING] Unrecognized operation line %d [%s]\n", i_lineNumber, (s == NULL ? "null" : s) );	
+			printf("[WARNING] Unrecognized operation line %d [%s]\n", i_lineNumber, (s == NULL ? "null" : s) );
 		}
-		
+
 		i_lineNumber ++;
 		memset(s, 0, 1024);
 	}
@@ -95,6 +95,7 @@ void* buildOperation(const char* a_operation, const unsigned int a_fileDescripto
 		(*op).oflags = 0;
 		whiteSpace = index((*op).fileName, ' ');
 		if (whiteSpace != NULL) {
+      int j = 0;
 			char* tok[16];
 			unsigned int i = 0;
 			*whiteSpace = '\0';
@@ -103,7 +104,7 @@ void* buildOperation(const char* a_operation, const unsigned int a_fileDescripto
 			tok[0] = strtok(whiteSpace, "|");
 			while (tok[++i] = strtok(NULL, "|"));
 
-			for (int j = 0; j < i; j++){
+			for (j = 0; j < i; j++){
 				if (strcmp(S_RDONLY, tok[j]) == 0) {
 					(*op).oflags |= O_RDONLY;
 				}
@@ -143,11 +144,11 @@ void* buildOperation(const char* a_operation, const unsigned int a_fileDescripto
 					(*op).oflags |= O_SYNC;
 				}
 				else {
-					printf("[WARNING] Ignored open option line %d [%s]\n", a_lineNumber, (tok[j] == NULL ? "null" : tok[j]) );	
+					printf("[WARNING] Ignored open option line %d [%s]\n", a_lineNumber, (tok[j] == NULL ? "null" : tok[j]) );
 				}
 			}
 		}
-		
+
 
 		(*op).targetFD = a_fileDescriptor;
 		(*op).lineNumber = a_lineNumber;
