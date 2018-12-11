@@ -1,0 +1,36 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{lettrine}
+\begin{document}
+\title{The security data lake, a cuntionnary tale}
+\author{Jeremie Banier, Adriaan Dens}
+\date{\today}
+\maketitle
+\tableofcontents
+\section{Introduction}
+Hello world
+\section{Vision}
+\subsection{Pre requisite}
+People, full time admin, network guy ...
+\subsection{log shipping}
+log4j, windows logs, syslog, nifi, logstash, beats ...
+container/vm located close to the source
+\subsection{parsing}
+\subsection{storage}
+String raw, either as text or as a part of a parsed event. think of future feature extraction, update in parsers...
+\section{Expected problems versus Unexpected problems}
+\subsection{Kerberos}
+\lettrine{A}{uthentication} is important, right ? well Kerberos is one hell of a piece of crap.
+It may be secure but ho boy, it's not easy to figure it out, luckily some guy put together a guide with everything you need to know about that sucker.
+\section{Stack}
+Which vendor to choose ? do we roll our own ? 
+What about gdpr ? encryption at rest, in flight, auditing ? 
+\subsection{hadoop versus splunk}
+\subsection{horton works, cloudera \& all}
+\section{Capacity planning}
+Self hosted versus cloud, ssd and spinning disks.
+\subsection{monitoring}
+for failure, capacity and performances.
+graphs metrics, log centralisation
+\section{Analytics}
+\lettrine{S}{eek} and destroy operations based on data.
+\end{document}
