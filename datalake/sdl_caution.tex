@@ -5,10 +5,26 @@
 \author{Jeremie Banier, Adriaan Dens}
 \date{\today}
 \maketitle
+\newpage
 \tableofcontents
+\newpage
 \section{Introduction}
-document purpose, technological evolution, needs for the SIEM to be able to crawl 
-more data than before (more device & slower detection)
+This paper was written because we rarely document failure and we even more rarely document 
+catastrophic failures. This is a non exhaustive list of things that failed during a project aimed 
+to provide a search solution to address some of the shortcommings of the previous gen SIEM.
+It also try to highlight the need for a reference architecture that is specific to the specific needs of the infosec community.
+
+The goal of the project was noble and ambitious, the SIEM that supports our SOC could not be used for Hunting (too slow) 
+It had the classic fault of only processing some cherry picked events from any given stream, had a short memory problem and it was nearly impossible 
+to run IOC over previous event since the correlation only happens on the *real time* stream off events.
+
+In short it was time for a make over ... 
+
+The new setup would have to allow every sources to be fully search-able and also to enrich logs and event in case of missing data
+like extracting the user name from one sources and stiching it to other logs from the same IP.
+It would also allow for point in time parser upgrade (replaying a new  version of a parser on older logs) as well as having flexible and 
+generic parsers. All that while allowing a one year retention period for all logs ...
+\newpage
 \section{Vision}
 \subsection{Pre requisite}
 People, full time admin, network guy ...
@@ -18,20 +34,26 @@ container/vm located close to the source
 \subsection{parsing}
 \subsection{storage}
 String raw, either as text or as a part of a parsed event. think of future feature extraction, update in parsers...
+\newpage
 \section{Expected problems versus Unexpected problems}
 \subsection{Kerberos}
 \lettrine{A}{uthentication} is important, right ? well Kerberos is one hell of a piece of crap.
 It may be secure but ho boy, it's not easy to figure it out, luckily some guy put together a guide with everything you need to know about that sucker.
+\newpage
 \section{Stack}
 Which vendor to choose ? do we roll our own ? 
 What about gdpr ? encryption at rest, in flight, auditing ? 
 \subsection{hadoop versus splunk}
 \subsection{horton works, cloudera \& all}
+\newpage
 \section{Capacity planning}
 Self hosted versus cloud, ssd and spinning disks.
 \subsection{monitoring}
 for failure, capacity and performances.
 graphs metrics, log centralisation
+\newpage
 \section{Analytics}
 \lettrine{S}{eek} and destroy operations based on data.
+\section{Humint}
+academics, works with other teams, manage expectation
 \end{document}
