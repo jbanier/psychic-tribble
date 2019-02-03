@@ -31,7 +31,26 @@ People, full time admin, network guy ...
 \subsection{log shipping}
 log4j, windows logs, syslog, nifi, logstash, beats ...
 container/vm located close to the source
-\subsection{parsing}
+\subsection{Parsing A.K.A E.T.L}
+\lettrine{E.T.L}{ stands for} Extract Transform and Load, usually it address the questions of:
+\begin{enumerate}
+	\item How do you ship the logs to your system.
+	\item How do you parse and extract the fields that have values in the log; like ip addresses, username, ...
+	\item How Transform them in a data structure that can be used by the others components of your system (json, parquet, ORC, avro, ...)
+\end{enumerate}
+Shipping the logs in this context means making them accessible in a reliable and preferably fast system to your 'parsers', one common way to do that is to use a 
+message broker of some sort to act as a queue in which the logs wait in line to be parsed.
+Several options are available but Kafka is the de facto standard in the Apache world.
+The advantages are amonsgt other that Kafka is resilient (survive a node crash or reboot), can scale up very easilly (just add more node) and is reliable (we don't want to loose logs) as a bonus 
+it support point in time resume and the capacity of the queue (called topics) can be set either in terms of storage or time, which very nicely allow for easy data replay that is extremely handy when you want to validate a new parser.
+
+Now that the data is shipped, we need a system that can scale up lineraly very much like Kafka, we have several options at our disposal depending on the complexity of the parsing, for logs which are CSV or assimilated Apache-Nifi can be a easy to deploy and easy to run solution,
+for more complex parsing Apache Storm or Apache Spark represent an excellent alternative and allow you to use either Java, Scala or Python to write your parsers.
+
+EXAMPLE OF STREAMING CODE
+
+One important thing to understand is that all those parser are online or in streaming mode, they work on (close to) real time data...
+Also introduce deps on data model
 \subsection{storage}
 String raw, either as text or as a part of a parsed event. think of future feature extraction, update in parsers...
 \newpage
@@ -54,6 +73,7 @@ graphs metrics, log centralisation
 \newpage
 \section{Analytics}
 \lettrine{S}{eek} and destroy operations based on data.
+Outliers, reporting, deviation from the known, user 
 \section{Humint}
-academics, works with other teams, manage expectation
+academics, works with other teams, manage expectation, management buy in
 \end{document}
