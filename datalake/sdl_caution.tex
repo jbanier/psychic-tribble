@@ -1,5 +1,28 @@
 \documentclass[a4paper,12pt]{article}
 \usepackage{lettrine}
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+language=Python,
+aboveskip=3mm,
+belowskip=3mm,
+showstringspaces=false,
+columns=flexible,
+basicstyle={\small\ttfamily},
+numbers=none,
+numberstyle=\tiny\color{gray},
+keywordstyle=\color{blue},
+commentstyle=\color{dkgreen},
+stringstyle=\color{mauve},
+breaklines=true,
+breakatwhitespace=true,
+tabsize=2
+}
 \begin{document}
 \title{The security data lake, a cautionnary tale}
 \author{Jeremie Banier, Adriaan Dens}
@@ -9,28 +32,235 @@
 \tableofcontents
 \newpage
 \section{Introduction}
-This paper was written because we rarely document failure and we even more rarely document 
+\lettrine{T}{his} paper was written because we rarely document failure and we even more rarely document 
 catastrophic failures. This is a non exhaustive list of things that failed during a project aimed 
-to provide a search solution to address some of the shortcommings of the previous gen SIEM.
-It also try to highlight the need for a reference architecture that is specific to the specific needs of the infosec community.
+to provide a search solution to address some of the shortcommings of the classic SIEM.
+It also try to highlight the need for a reference architecture that is specific to the needs of the infosec community.
 
-The goal of the project was noble and ambitious, the SIEM that supports our SOC could not be used for Hunting (too slow) 
-It had the classic fault of only processing some cherry picked events from any given stream, had a short memory problem and it was nearly impossible 
-to run IOC over previous event since the correlation only happens on the *real time* stream off events.
+The goal of the project was noble and ambitious, the SIEM that supports our SOC could not be easilly used for Hunting (too slow) 
+It had the classic fault of only processing some cherry picked events from any given stream (filtering known bad), had a short memory problem (3 months) and it was nearly impossible 
+to run IOC\footnote{Indicator Of Compromise, Response team share among themselves Ip addresses, domain or file hash that are know to be malicious, so that you can check if you've been compromised by that bad actor too.} over past events since the correlation only happens on the *real time* stream off events.\footnote{The last of those issues is particularly frustrating since when large incident response firm like Mandiant or FoxIt publish reports they typically do it when the campaign is over, so adding those IOC to your SIEM to check for current and future occurences is of limited utility.
 
 In short it was time for a make over ... 
 
-The new setup would have to allow every sources to be fully search-able and also to enrich logs and event in case of missing data
-like extracting the user name from one sources and stiching it to other logs from the same IP.
-It would also allow for point in time parser upgrade (replaying a new  version of a parser on older logs) as well as having flexible and 
-generic parsers. All that while allowing a one year retention period for all logs ...
+The new setup would have to allow every sources to be fully search-able and also enrich the logs and events in case of missing data, a couple of example are:
+\begin{enumerate}
+	\item Extracting user name from one sources and stiching it to other logs based on the Ip address.
+	\item In a DHCP heavy environement, like the wifi network of a large office, match the MAC, Ip address and hostname to add them to the Windows logs, so that you can easilly pivot from the windows event logs to the network telemetry.
+\end{enumerate}
+
+It should also allow for point in time parser upgrade (replaying a new  version of a parser on older logs) as well as having flexible and generic parsers. 
+All that while allowing a one year retention period for all logs ...
+
+\emph{A piece of cake...}
 \newpage
-\section{Vision}
-\subsection{Pre requisite}
-People, full time admin, network guy ...
-\subsection{log shipping}
+\section{The Plan}
+\subsection{The Team}
+People, full time admin, network guy ... devops shop
+best to work with data scientist if already present, logically cut in 3 (platform, data, use cases)
+\subsection{The Factory}
 log4j, windows logs, syslog, nifi, logstash, beats ...
 container/vm located close to the source
+\subsection{Chopping block}
+\lettrine{E.T.L}{ stands for} Extract Transform and Load, usually it address the questions of:
+\begin{enumerate}
+	\item How do you ship the logs to your system.
+	\item How do you parse and extract the fields that have values in the log; like ip addresses, username, ...
+	\item How Transform them in a data structure that can be used by the others components of your system (json, parquet, ORC, avro, ...)
+\end{enumerate}
+Shipping the logs in this context means making them accessible in a reliable and preferably fast system to your 'parsers', one common way to do that is to use a 
+message broker of some sort to act as a queue in which the logs wait in line to be parsed.
+Several options are available but Kafka is the de facto standard in the Apache world.
+The advantages are amonsgt other that Kafka is resilient (survive a node crash or reboot), can scale up very easilly (just add more node) and is reliable (we don't want to loose logs) as a bonus 
+it support point in time resume and the capacity of the queue (called topics) can be set either in terms of storage or time, which very nicely allow for easy data replay that is extremely handy when you want to validate a new parser.
+
+Now that the data is shipped, we need a system that can scale up lineraly very much like Kafka, we have several options at our disposal depending on the complexity of the parsing, for logs which are CSV or assimilated Apache-Nifi can be a easy to deploy and easy to run solution,
+for more complex parsing Apache Storm or Apache Spark represent an excellent alternative and allow you to use either Java, Scala or Python to write your parsers.
+
+EXAMPLE OF STREAMING CODE
+\begin{lstlisting}
+# -*- coding: utf-8 -*-
+# vi:ts=4:et
+
+#    Print to stdout
+from __future__ import print_function
+from functools import partial
+from shared.context import JobContext
+#    Spark
+from pyspark import SparkContext, StorageLevel
+#    Spark Streaming
+from pyspark.streaming import StreamingContext
+#    Kafka
+from pyspark.streaming.kafka import KafkaUtils
+from kafka import KafkaProducer
+#    json parsing
+import json
+#    grok pattern
+from pygrok import Grok
+#    date canonicalisation
+from datetime import *
+import pytz
+from dateutil.parser import *
+import traceback
+from time import time
+import py4j
+
+from shared.config import SDLConfig
+from shared.common import load_json,KafkaProducerFactory
+#In case of trouble with kafka/kerberos un comment this for more logs
+import logging
+#logging.basicConfig(filename='/tmp/kafka_kerberos.log',level=logging.DEBUG)
+logger=logging.getLogger()
+
+__author__ = 'jbanier'
+
+CONSUMER_NAME = "SyslogParser_0_1"
+
+class SyslogParserJobContext(JobContext):
+    def _init_accumulators(self, sc):
+        self.initalize_counter(sc, 'SyslogParser')
+
+class Grokker:
+    syslog_pattern = r'^(<%{INT:SyslogPriority}>)?(%{TIMESTAMP_ISO8601:Timestamp}|(?<Timestamp>%{MONTH:Month}\s+%{MONTHDAY:Day}\s+%{TIME:Time}))\s+%{HOSTNAME:SourceHostname}\s%{PROG:SyslogProgram}(?:\[%{POSINT:SyslogProgramPid}\])?'
+    grok = Grok(syslog_pattern,default_patterns_dirs=['/tmp/patterns/pygrok/patterns/'])
+    def getGrok(self):
+        if Grokker.grok == None:
+                #This works by calling the patched version of pygrok, which accepts param default_patterns_dir
+                #Grokker.grok = Grok(Grokker.syslog_pattern,default_patterns_dirs=['/css-work/pygrok/patterns'])
+                Grokker.grok = Grok(Grokker.syslog_pattern,default_patterns_dirs=['/tmp/patterns/pygrok/patterns/'])
+                
+        return Grokker.grok
+
+def grok_event(event):
+    facilities = ['kernel', 'user', 'mail', 'daemon', 'auth', 'syslog', 'lpr', 'news', 'uucp', 'clock', 'authpriv', 'ftp', 'ntp', 'audit', 'alert', 'cron', 'local0', 'local1', 'local2', 'local3', 'local4', 'local5', 'local6', 'local7']
+    severities = ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug']
+    gr = Grokker()
+    grok = gr.getGrok()
+    try:
+        parsed_syslog = grok.match(event['Raw'])
+        if parsed_syslog:
+            parsed_syslog["Tags"] = ["syslog"]
+            parsed_syslog["Parsers"] = [CONSUMER_NAME]
+            if 'SyslogPriority' in parsed_syslog and parsed_syslog['SyslogPriority'] != None:
+                int_priority = int(parsed_syslog['SyslogPriority'])
+                int_facility = int(int_priority / 8)
+                int_severity = int(int_priority % 8)
+                parsed_syslog["SyslogSeverity"] = severities[int_severity]
+                parsed_syslog["SyslogFacility"] = facilities[int_facility]
+                try:
+                    x = parsed_syslog['SyslogProgram']
+                    x = x.replace(':', '')
+                    x = x.lower()
+                    parsed_syslog['SyslogProgram'] = x
+                except:
+                    pass
+            else:
+                 parsed_syslog['SyslogPriority'] = 0
+                 parsed_syslog['SyslogProgramPid'] = 0
+    except Exception as e:
+        parsed_syslog = event
+        parsed_syslog["Timestamp"] = parsed_syslog["IngestionTimestamp"]
+        parsed_syslog["Tags"] = ["not_syslog"]
+        parsed_syslog["Parsers"] = [CONSUMER_NAME]
+        traceback.print_exc()
+        logger.error("[-] Guru meditation (grok): " + str(e))
+        logger.debug("[-] Guru meditation: " + event['Raw'])
+    #pack the 2 dict together
+    try:
+        new_event = {key: value for (key, value) in (event.items() + parsed_syslog.items())}
+    except Exception as e:
+        logger.error("[-] Error: " + event['Raw'])
+        new_event = event
+    #change direction 
+    new_event['Direction'] = 'from'
+    #dd static column for count
+    new_event['DummyCount'] = 1
+    return new_event
+
+def fix_time_event(log):
+    week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    utc_tz = pytz.timezone('UTC')
+    if 'Timestamp' in log:
+        ts = log['Timestamp']
+        ts_dt = ''
+        if 'Month' in log:
+            # here we have a 26 Apr 14:42 sort ts and we do our best
+            local_tz = pytz.timezone('Europe/Brussels')
+            ts_dt = parse(ts, fuzzy=True)
+            ts_dt = ts_dt.replace(tzinfo=local_tz)
+            log.pop('Day', None)
+            log.pop('Month', None)
+            log.pop('Time', None)
+        else:
+            ts_dt = parse(ts)
+        log['Timestamp'] = ts_dt.astimezone(utc_tz).isoformat()
+        log['TimeHour'] = ts_dt.astimezone(utc_tz).hour
+        log['TimeDay'] = ts_dt.astimezone(utc_tz).day
+        log['TimeMonth'] = ts_dt.astimezone(utc_tz).month
+        log['TimeYear'] = ts_dt.astimezone(utc_tz).year
+        log['TimeWeekDay'] = week[ts_dt.astimezone(utc_tz).weekday()]
+    else:
+        logger.warning("[-] No timestamp found")
+    return log
+
+def kafka_writer(iterator):
+    #metrics = MetricsProducer("prod")
+    sdlconf = SDLConfig("prod", CONSUMER_NAME)
+    #metrics.sendMetric(CONSUMER_NAME + ".processed", 1)
+    kf = KafkaProducerFactory()
+    kafkaconn = None
+    try:
+        kafkaconn = kf.get_connection(sdlconf)
+    except:
+        logger.error('get connection to Kafka failed...')
+        pass
+    for raw_record in iterator:
+        try:
+            kafkaconn.send(b'all-work', bytes(json.dumps(raw_record, ensure_ascii=False).encode('utf8')))
+            #metrics.sendMetric(CONSUMER_NAME + ".next", 1)
+        except Exception as e:
+            logger.error("[-] Failed to process log, something barfed: " + str(e))
+            logger.debug(raw_record)
+            #metrics.sendMetric(CONSUMER_NAME + ".failure", 1)
+            traceback.print_exc()
+    #kafkaconn.flush()
+
+def analyze(sc):
+    print("[+] Running " + CONSUMER_NAME)
+    global kafka_producer
+    context = SyslogParserJobContext(sc)
+    sc.setLogLevel("ERROR")
+    ssc = StreamingContext(sc, 10)
+    ssc.checkpoint('/cybersec/config/spark_checkpoint/' + CONSUMER_NAME)
+
+    sdlconf = SDLConfig("prod", CONSUMER_NAME)
+    kafka_stream = KafkaUtils.createDirectStream(ssc, ['all-packed'], \
+    kafkaParams={'security.protocol': 'PLAINTEXTSASL', \
+        'sasl.kerberos.service.name': 'kafka', \
+        'group.id': CONSUMER_NAME, \
+        'auto.offset.reset': 'largest', \
+        'bootstrap.servers': sdlconf.kafka_brokers})
+
+    kafka_stream\
+    .map(lambda x: load_json(x[1]))\
+    .map(lambda x: grok_event(x))\
+    .map(lambda x: fix_time_event(x))\
+    .foreachRDD(lambda rdd: rdd.foreachPartition(kafka_writer))
+    # Start the streaming context
+    ssc.start()
+    #flag to indicate we exit the while loop
+    retry=True
+    while retry:
+    	try:
+    		ssc.awaitTermination()
+    	except py4j.protocol.Py4JJavaError as e:
+    		logger.info("An exception has occured while calling awaitTermination")
+    		logger.error("Exception is:\n-------{0}\n-------".format(e))
+    		logger.error("Java exception is:\n-------\n{0}\n-------".format(e.java_exception))
+    		logger.info("retrying")
+    return "Done"
+\end{lstlisting}
+
 \subsection{Parsing A.K.A E.T.L}
 \lettrine{E.T.L}{ stands for} Extract Transform and Load, usually it address the questions of:
 \begin{enumerate}
@@ -48,6 +278,7 @@ Now that the data is shipped, we need a system that can scale up lineraly very m
 for more complex parsing Apache Storm or Apache Spark represent an excellent alternative and allow you to use either Java, Scala or Python to write your parsers.
 
 EXAMPLE OF STREAMING CODE
+
 
 One important thing to understand is that all those parser are online or in streaming mode, they work on (close to) real time data...
 Also introduce deps on data model
