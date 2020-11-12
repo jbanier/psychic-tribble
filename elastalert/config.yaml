@@ -1,0 +1,8 @@
+# The alert is use when a match is found
+alert:
+- "nagios_ncpa.NagiosNcpaAlerter"
+
+# (required, nagios specific)
+nrdp_parent: http://nagios.corp/nrdp/
+nrdp_token: XXXXXXXXXXXXXXXXXXXXXXXXX
+nrdp_client_hostname: monitoring-elastalert
